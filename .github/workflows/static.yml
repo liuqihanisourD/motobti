@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>机车灵魂测试</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #0a0a0a;
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        .container {
+            width: 100%;
+            max-width: 420px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        .hidden { display: none !important; }
+
+        #start-section { text-align: center; margin-top: 30vh; }
+        .main-title {
+            font-size: 36px; color: #ff4500; margin-bottom: 15px;
+            letter-spacing: 2px; text-shadow: 0 0 10px rgba(255, 69, 0, 0.3);
+        }
+        .sub-title { color: #666; margin-bottom: 50px; font-size: 16px; }
+
+        .action-btn {
+            background: linear-gradient(90deg, #ff4500, #ff6a00);
+            color: white; border: none; padding: 16px 0; width: 100%;
+            border-radius: 50px; font-size: 18px; font-weight: bold;
+            cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 15px rgba(255, 69, 0, 0.4);
+        }
+        .action-btn:active { transform: scale(0.98); }
+
+        .progress-bar {
+            width: 100%; height: 4px; background-color: #222;
+            border-radius: 2px; margin-bottom: 20px; overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%; background: linear-gradient(90deg, #ff4500, #ff6a00);
+            width: 0%; transition: width 0.3s ease;
+        }
+        .question-count { color: #555; font-size: 13px; margin-bottom: 15px; text-align: right; }
+        .question-text { font-size: 20px; line-height: 1.6; margin-bottom: 35px; min-height: 80px; font-weight: 500; }
+        .options-box { display: flex; flex-direction: column; gap: 15px; }
+        .option-btn {
+            background-color: #151515; border: 1px solid #2a2a2a; color: #ddd;
+            padding: 18px 20px; border-radius: 12px; font-size: 15px;
+            text-align: left; cursor: pointer; transition: all 0.2s; line-height: 1.5;
+        }
+        .option-btn:hover { border-color: #ff4500; background-color: #1a1a1a; }
+        .option-btn:active { background-color: #ff4500; color: white; border-color: #ff4500; }
+
+        #result-section { text-align: center; padding-top: 30px; animation: fadeIn 0.5s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .result-title { font-size: 26px; color: #ff4500; margin-bottom: 20px; font-weight: bold; }
+        .result-img {
+            width: 100%; height: 220px; border-radius: 12px; margin-bottom: 25px;
+            object-fit: cover; box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+            background-color: #151515;
+        }
+        .result-desc {
+            font-size: 15px; line-height: 1.9; color: #bbb; text-align: left;
+            margin-bottom: 40px; padding: 20px; background: #151515; border-radius: 12px;
+            border-left: 4px solid #ff4500;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="start-section" class="section">
+            <h1 class="main-title">机车灵魂测试</h1>
+            <p class="sub-title">30道题，测出你骨子里的机车基因</p>
+            <button id="start-btn" class="action-btn">点火启动</button>
+        </div>
+
+        <div id="quiz-section" class="section hidden">
+            <div class="progress-bar"><div id="progress" class="progress-fill"></div></div>
+            <div class="question-count" id="question-count">1 / 30</div>
+            <h2 id="question-title" class="question-text"></h2>
+            <div id="options-container" class="options-box"></div>
+        </div>
+
+        <div id="result-section" class="section hidden">
+            <h1 id="result-title" class="result-title"></h1>
+            <img id="result-img" class="result-img" src="" alt="机车人格配图">
+            <p id="result-desc" class="result-desc"></p>
+            <button id="restart-btn" class="action-btn">再测一次</button>
+        </div>
+    </div>
+
+    <script>
+        // 完整的30道题库数据
+        const questions = [
+            { dim: 'social', title: "1. 新车落地后的第一反应是？", options: [
+                { text: "发朋友圈/车友群，赶紧约好兄弟出来看车", value: 1 },
+                { text: "独自抚摸爱车，转动油门享受声浪", value: 0 }
+            ]},
+            { dim: 'social', title: "2. 跑山途中在休息区遇到不认识的摩友，你会？", options: [
+                { text: "竖起大拇指，聊聊ta的车", value: 0.5 },
+                { text: "点个头致意不能再多", value: 0 },
+                { text: "竖起大拇指，然后飞到ta前面放技能", value: 1 }
+            ]},
+            { dim: 'social', title: "3. 发现了一条绝佳的跑山路线，你会怎么做？", options: [
+                { text: "立刻发到VIP车友群、健身群、工作群...周末一起去跑", value: 1 },
+                { text: "此事不可声张，下班赶紧去跑，去晚了人多了", value: 0 }
+            ]},
+            { dim: 'social', title: "4. 有人给你发送了一个聚众骑车的邀请", options: [
+                { text: "必去，喜欢热闹，觉得人越多越好", value: 1 },
+                { text: "？什么都有圈子，骑车不是一个人的事吗", value: 0 }
+            ]},
+            { dim: 'social', title: "5. 骑行在路上，你更喜欢什么样的状态？", options: [
+                { text: "和车队排成一列，听着对讲机里的呼喊声", value: 1 },
+                { text: "一个人戴上耳机，沉浸在自己的世界里", value: 0 }
+            ]},
+            { dim: 'social', title: "6. 摩托车水箱被你骑爆了，你的第一反应是？", options: [
+                { text: "拍短视频发圈吐槽，群里求助，然后叫辆卡车徒手把200kg的车搬上去", value: 1 },
+                { text: "默默查GPT/豆包，或者直接叫拖车，不想声张", value: 0 }
+            ]},
+            { dim: 'adventure', title: "7. 导航提示前方修路需绕行50公里，但旁边有近路，你会？", options: [
+                { text: "我知道一条近路！跟我走！", value: 1 },
+                { text: "哪里有路，神经病啊", value: 0 }
+            ]},
+            { dim: 'adventure', title: "8. 你更向往哪种骑行目的地？", options: [
+                { text: "丙察察、阿里大北线这种充满未知和挑战的极境", value: 1 },
+                { text: "铺装良好的沿海公路或环湖公路，主打休闲看景", value: 0 }
+            ]},
+            { dim: 'adventure', title: "9. 天气预报说下午大概率暴雨，但早上天气极好，你会？", options: [
+                { text: "天气预报？不存在的，淋雨也是种体验", value: 1 },
+                { text: "算了算了，把车擦擦，在屋里种盆栽", value: 0 }
+            ]},
+            { dim: 'adventure', title: "10. 骑行时遇到一个没有路牌的三岔路口，你会？", options: [
+                { text: "前面的摩托往哪走跟上去崩了再说，走对了有什么用？", value: 1 },
+                { text: "停下来打开手机地图仔细确认再走", value: 0 }
+            ]},
+            { dim: 'adventure', title: "11. 关于长途摩旅的住宿安排，你倾向于？", options: [
+                { text: "问问我三箱里的超轻帐篷和科技睡袋，完全不虚", value: 1 },
+                { text: "必须提前定好沿途的酒店，绝不能将就", value: 0 }
+            ]},
+            { dim: 'adventure', title: "12. 看到前方有一条写着“废弃危险、禁止进入”的隧道，你会？", options: [
+                { text: "？终于找到你了，原来在这", value: 1 },
+                { text: "别去啊，遵守规定才是骑士", value: 0 }
+            ]},
+            { dim: 'stunt', title: "13. 等一个长达90秒的红绿灯，你会？", options: [
+                { text: "双脚离地，原地练练平衡", value: 1 },
+                { text: "双脚着地，刷刷手机等灯变绿", value: 0 }
+            ]},
+            { dim: 'stunt', title: "14. 看到短视频里别人骑摩托翘头、烧胎，你的第一反应是？", options: [
+                { text: "太帅了！找个没人的空地我也得练练", value: 1 },
+                { text: "费离合费轮胎，我不专门学", value: 0 }
+            ]},
+            { dim: 'stunt', title: "15. 过连续的急弯或掉头弯时，你的姿势是？", options: [
+                { text: "漂移！", value: 1 },
+                { text: "老老实实正坐减速，走最安全的轨迹", value: 0 },
+                { text: "微微侧挂，或者反倾", value: 0 }
+            ]},
+            { dim: 'stunt', title: "16. 关于日常刹车习惯，你更倾向于？", options: [
+                { text: "一套刹车系统减震全改了，必须翘尾", value: 1 },
+                { text: "提前预判，平稳线性地减速", value: 0 },
+                { text: "重刹，然后手术刀一般的精准操作", value: 0 }
+            ]},
+            { dim: 'stunt', title: "17. 你被传送到了空旷无人的封闭直路上，你发现？", options: [
+                { text: "？我的前轮怎么起来了", value: 1 },
+                { text: "？不过是一条没人的路罢了", value: 0 },
+                { text: "单纯骑快点感受下自由的风", value: 0 }
+            ]},
+            { dim: 'stunt', title: "18. 对于“原地倒车掉头”这项技能，你的看法是？", options: [
+                { text: "觉得很酷，如果我专门练过，狭窄路段就不用下车辣", value: 1 },
+                { text: "觉得太伤车且容易倒，我宁愿下车推着走", value: 0 }
+            ]},
+            { dim: 'speed', title: "19. 你被传送到了安全的封闭赛道上，你会？", options: [
+                { text: "大马力全开，贴着风挡感受极速压迫感，享受精准切入", value: 1 },
+                { text: "路宽一点罢了没什么区别", value: 0 }
+            ]},
+            { dim: 'speed', title: "20. 选车时，对于零百加速的数据，你的态度是？", options: [
+                { text: "最低标准450RR，慢了没灵魂", value: 1 },
+                { text: "GSX250就行，我不在乎零百差那零点几秒", value: 0 },
+                { text: "无所谓，但我低扭很暴躁", value: 0 }
+            ]},
+            { dim: 'speed', title: "21. 在高架上遇到一辆慢吞吞占着快道的车，你会？", options: [
+                { text: "找准机会一把油门过", value: 1 },
+                { text: "跟在后面慢慢晃，不着急，安全第一", value: 0 }
+            ]},
+            { dim: 'speed', title: "22. 对于车辆的仪表盘极速表底，你的看法是？", options: [
+                { text: "必须299，虽然骑不到但看着爽", value: 1 },
+                { text: "完全不在乎表底，你用的到吗？", value: 0 }
+            ]},
+            { dim: 'speed', title: "23. 下长且陡的坡道时，你的操作是？", options: [
+                { text: "不错！下坡对过弯要求更高，正适合我！", value: 1 },
+                { text: "正常挂低档慢速下去啊", value: 0 }
+            ]},
+            { dim: 'speed', title: "24. 评价一台发动机的好坏，你最看重什么？", options: [
+                { text: "爆发力和持续输出的马力", value: 1 },
+                { text: "日常城市骑行的平顺性", value: 0 }
+            ]},
+            { dim: 'taste', title: "25. 对于摩托车的外观和改装", options: [
+                { text: "符合摩托格调的配件，不改也行，干净整洁，原厂漆面挺好", value: 1 },
+                { text: "绝不将就，碳纤维、定风翼、锻造轮毂，必须狂拽酷炫", value: 0 }
+            ]},
+            { dim: 'taste', title: "26. 同等预算下，以下两种车选一个？", options: [
+                { text: "买有个性、有底蕴的小众复古或CAFÉ RACER，速度稍逊没关系", value: 1 },
+                { text: "国产中排，外形融合怪，性能够要什么自行车", value: 0 }
+            ]},
+            { dim: 'taste', title: "27. 挑选骑行装备时，你更看重？", options: [
+                { text: "顶尖品牌、高级皮革，版型必须正，且要和车子完美搭配", value: 1 },
+                { text: "主要为了安全防护，样子过得去、性价比高就行", value: 0 }
+            ]},
+            { dim: 'taste', title: "28. 对于给摩托车贴拉花或贴纸，你的态度是？", options: [
+                { text: "贴满整车，GP拉花，湾岸线，Raiders全部整上！！", value: 0},
+                { text: "看情况贴，精美花纹可以，其他破坏原厂漆面高级感", value: 1 }
+            ]},
+            { dim: 'taste', title: "29. 你觉得一辆摩托车外观的好坏来源于哪里？", options: [
+                { text: "碳纤维纹路、定制漆水、亮面金属的视觉冲击", value: 0 },
+                { text: "细节做工严丝合缝、没有异响、漆水厚度均匀", value: 1 }
+            ]},
+            { dim: 'taste', title: "30. 到达目的地停车时，你的强迫症是？", options: [
+                { text: "必须停在显眼不挤的地方，把车摆正角度拍几张帅照", value: 1 },
+                { text: "方便即可，贴着外卖小哥就进去了", value: 0 }
+            ]}
+        ];
+
+        // 32种极致优化后的结果文案字典
+        const resultMap = {
+            'AAAAA': { type: '全栈机车神明', desc: '老派灵魂，手术刀般的精准。全维度拉满的你简直是机车圈的“神明”。你不仅爱组局探险，技能满分，且尊贵的公升大贸绝对是你车库标配。你能骑着大道滑翔漂移，却不洒落手中咖啡。极具底蕴的改件搭配神级控车技术，别人在跑山，你已经在四环把骑盆栽的兄弟甩没影了。你真的存在吗？' },
+            'AAAAB': { type: '四环幽灵骑士', desc: '你的技术过于全面，简直是个BUG。你追求极致赛道体验，会抄近路，封闭道路必须翘头，直线必须拧到底。你不过多在乎文化底蕴，车子可能一身战损，但机械素质绝对顶配。曾经有位骑盆栽的摩托佬在四环被你带着挡泥板骑KTM崩得连车尾灯都看不见，他还没到家，你已经从海南骑到了拉萨。' },
+            'AAABA': { type: '史诗级远征领主', desc: '你选择野路，但是不骑快？真的吗？？你喜欢带着一群小伙伴去探索未知，在聚光灯下秀特技。你拥有攀爬或ADV，极具品位，且车子必须有历史沉淀、一手原漆。因此你是最拉风的领队，别人在环湖，你的车已经学会了游泳。' },
+            'AAABB': { type: '泥地狂暴巨兽', desc: '你喜欢叫上一帮人去钻小树林和非铺装路面。对外表没啥底蕴要求，但对性能十分偏执，能造才行。你不追求极速，那只能是越野车了。你的车装了菠萝胎和长行程减震，带着兄弟们在泥潭里互相陷车，主打一个脏兮兮的快乐。只要发动机不坏，你就能一直造下去。' },
+            'AABAA': { type: '老钱风赛道屠夫', desc: '你热衷组局跑山，车子不仅具文化底蕴，且性能卓越，直线绝不认输。但你竟然不搞翘头等危险特技，真是有原则的狂热者。你大概骑着一台极具格调的复古跑车，带着挡泥板在车队里一马当先。你鄙视花里胡哨的杂耍，只追求纯粹的 Braking Point 和 Late Apex，你是跑山队伍里最懂走线的大佬。' },
+            'AABAB': { type: '达喀尔民间狂人', desc: '你热衷于在群里喊一嗓子，带着兄弟们去非铺装路面上狂飙。你不搞花里胡哨的翘头，但只要上了碎石路或沙漠，绝对把油门拧到底，追求极致的越野快感。你的车可能装着巨大的鸟嘴和越野胎，外表早就是一身战损，但底下的发动机被压榨到了极限，你就是车队里的沙漠狂人。' },
+            'AABBA': { type: '荒野浪漫主义教父', desc: '你是那种最有情调的摩旅群主。不追求速度也不搞特技，但会精心策划一场去大理或西藏的复古摩旅。你骑着原汁原味的 Scrambler，带着车队走在非铺装的土路上慢悠悠地拍照。你极其看重车辆的文化底蕴，绝不允许车上有违和的现代塑料件。对你来说，兄弟们在夕阳下的剪影比什么都重要。' },
+            'AABBB': { type: '迪斯科泥地暴徒', desc: '只要群里一喊，你绝对带着挡泥板冲在最前。你喜欢带着车队去钻泥地、过河沟，但不追求极致的竞技速度。你的车可能装满了夸张的射灯、彩灯和大喇叭，外表极其张扬拉风。你享受的就是一群人在野外搞得灰头土脸然后一起哈哈大笑的纯粹快乐。' },
+            'ABAAB': { type: '午夜炸街教父', desc: '你是城市夜晚的绝对霸主！不仅喜欢建群组局，还要带着车队在环路上炸街。等红灯必须烧个胎，起步必须带个翘头，直线加速要把大排量声浪拉满。你的车改了夸张的短尾、大尾翼和回压排气，充满战损气息。你不下野地，因为那样弄脏了你精心设计的赛化外观。你就是公路特技表演艺术家。' },
+            'ABAAA': { type: '古典暴力美学大师', desc: '你是一个矛盾又迷人的结合体。热衷组局，带着挡泥板出现在赛道日，但骑的可能是充满历史底蕴的老款两冲程。在别人看来这种车该供起来，你却骑着它在赛道上极限压弯，甚至在直道秀一把前轮离地。你不追求现代空力套件，用最纯粹的机械功底征服全场，你是赛道上最有格调的 Old School 狂人。' },
+            'ABABA': { type: '街头定圆艺术家', desc: '你是摩友圈里的气氛组组长。不喜欢去野地吃灰，也不追求极速，最大乐趣是带着一群人停在江边，骑着复古车或 Chopper 展示行云流水的定圆和慢速特技。你的车充满定制文化和手工拉花，你用最优雅的姿态，玩着最硬核的控车技术，引来路人阵阵惊呼。' },
+            'ABABB': { type: '地下特技导师', desc: '只要群里喊“去练车”，你绝对第一个到。你的地盘是铺装路面、地下车库和空旷广场。直线给油没意思，你只对翘头、漂移、神龙摆尾情有独钟。你的车可能是装了防摔杠、贴满张扬涂鸦的战损街车。你就是城市里的特技导师，带着小弟在柏油路面上留下焦黑的轮胎印。' },
+            'ABBAA': { type: '复古老炮赛道杀手', desc: '你是有品位的车队领头羊。带着挡泥板组织大家去赛道日，从不搞翘头，也不去走烂路，但极度追求过弯极限和精准走线。你最与众不同之处在于偏爱有历史故事的老款性能车。当别人骑着最新款四缸机狂飙时，你骑着老旧机器用纯熟技术教他们做人。复古外表下，藏着一颗赛道机器的心。' },
+            'ABBAB': { type: '极致走线偏执狂', desc: '你是最纯粹的跑山群主。群里严禁讨论翘头，只谈走线和刹车点。你带着车队追求极致的压弯倾角和出弯速度。你的车是标准的赛化仿赛，大尾翼、光头胎，外表就是为速度而生的张扬战损风。你就是车队的定海神针，用最理性的操作，骑着最狂暴的机器。' },
+            'ABBBA': { type: 'Café Racer 终极教主', desc: '你组建的可能不是车队，而是“机车穿搭交流群”。极度排斥下野地和危险动作，也讨厌飙车。骑车的主要目的是带着一群打扮精致的朋友去网红咖啡馆打卡。你的车必须是纯正的 Cafe Racer，分体式手把、毛毛虫坐垫一样不少。对你来说，机车不是用来“骑”的，是用来“穿”在身上的文化符号。' },
+            'ABBBB': { type: '声浪-Only 战士', desc: '你是那种“只要我排气管声音够大，我就是最靓的仔”的群主。建群喊人溜车，但要求绝对安全，绝不压弯、绝不翘头、绝不走烂路。你的车改了极其夸张的排气，贴满张扬拉花，外表战损到交警在三公里外都能看到你。你骑着几百匹的猛兽，却用30迈的速度巡航，主打一个“性能我买了，张扬我做到了，但我不用”。' },
+            'BAAAA': { type: '孤独的荒野神话', desc: '你简直是个神话级存在！不混圈子，不回群消息，一个人骑着有浓厚历史底蕴的老车一头扎进无人区。在非铺装的戈壁上不仅敢拉极速，还敢在砂石路面上做特技。你的车可能是不可复制的古董，却被你当成最极致的玩具。别人求之不得的藏品，被你当成了荒野里的泥猴子。' },
+            'BAAAB': { type: '废土孤狼', desc: '你是一个可怕的独行侠。没有车队没有群聊，一个人扛着车走进深山老林或沙漠腹地。你的车被改成最暴力的竞技状态，外表充满战损和野性。在非铺装路面上不仅把油门拧到断油，还会在飞坡时顺便做特技。你不在乎别人怎么看，只在乎这次能不能比上次快两秒，你就像隐居在野外的职业车手。' },
+            'BAABA': { type: '时间旅行者', desc: '你像是从六七十年代穿越来的独行侠。拒绝现代社会的喧嚣，一个人骑着经典的 Scrambler 消失在林道和土路里。你不追求速度，但在遇到倒伏的树干时，会用极其优雅的特技姿态跨越过去。你享受的是人、老车、大自然三者之间最原始的沟通。' },
+            'BAABB': { type: '反重力疯子', desc: '你不属于任何车队，你只属于土坡和沙坑。你的车可能是狂暴的两冲程越野车，改了夸张的排气。你不在乎跑多快，只在乎能飞多高、能在空中转几圈。一个人推着车去废弃沙场练上一整天，不在乎有没有观众，因为特技本身就是你与自己身体的对话。' },
+            'BABAA': { type: '午夜古典刺客', desc: '当城市霓虹灯亮起，你这个独行侠就出动了。不去野地不混群，一个人骑着充满底蕴的老款跑车。在空旷的高架上，既会像疯子一样拉到极速，又会在车流稀少时翘起前轮。别人觉得老车只能慢慢骑，你却用极其硬核的特技打破了常规。你就像午夜幽灵，留给别人的只有古老发动机的嘶吼和红色尾灯。' },
+            'BABAB': { type: '午夜极速狂魔', desc: '你是这座城市夜晚最危险的孤狼。不建群不结伴，车是赛化到牙齿的重型猛兽，外观充满暴戾战损气息。只要路面允许，不仅会把速度拉到让人窒息的极限，还会在高速下完成翘头、漂移等致命特技。你没有观众，也不需要观众，肾上腺素就是你唯一的信徒。' },
+            'BABBA': { type: '地下定圆隐士', desc: '你没有群没有社交，不跑山不下赛道。你可能是某个地下车库或深夜空场的常客。骑着高度定制的复古车，默默练习极其考验平衡的定圆和倒车骑行。你的车充满了不可复制的艺术底蕴和手工痕迹。对你来说，摩托不是用来赶路的，而是用来雕刻空间的艺术品。' },
+            'BABBB': { type: '独行暗夜滑手', desc: '你是一个独来独往的街头玩家。对赛道圈速毫无兴趣，也不去野地吃灰。骑着外观极其夸张、贴满张扬涂鸦的战损街车游走在城市路面。等红灯时可能突然来个神龙摆尾，空地上独自练习漂移。你不在乎别人的眼光，只专注于打磨自己的特技动作，你的车就是你表达个性的最大画布。' },
+            'BBAAA': { type: '扮猪吃老虎宗师', desc: '你是赛道日里最不起眼却最让人敬畏的存在。总是一个人默默把那台保养极好、充满底蕴的经典老车推上发车线。不跟任何人交流，不搞任何花活。但当绿灯亮起，你用纯熟的赛道技术，开着这台可能比你年纪还大的车，在弯道里把那些骑着最新款战损仿赛的年轻人虐得怀疑人生。' },
+            'BBAAB': { type: '无情圈速机器', desc: '你是最纯粹的赛道机器驾驶者。没有群聊没有车队，一个人扛着全副武装的战损战车去参加 Track Day。去掉了所有不必要的装饰，换上光头胎和全套碳纤维空力套件。你不翘头不烧胎，因为那浪费轮胎，在赛道上就像设定好程序的机器，每一个动作都在为了切掉那0.1秒的圈速。' },
+            'BBABA': { type: '旧时光隐士', desc: '你像是一个活在旧时光里的隐士。排斥现代机车圈的喧嚣浮躁，一个人骑着绝版的复古老车在铺装路上慢悠悠巡航。极度珍爱这台车，擦得一尘不染，保持最原汁原味的文化底蕴。不追求速度更不碰特技，听老发动机匀速运转的声音，就是最大的享受。你骑行，只为取悦自己。' },
+            'BBABB': { type: '人形静态展车架', desc: '你可能是一个孤独的“外观患者”。不喜欢跟人交流心得，也不去赛道证明实力。但你的车改得比谁都夸张，大尾翼、低趴姿态、极其张扬的战损涂鸦。一个人骑着这台猛兽在街上以40码巡航，只要路人目光多停留一秒，虚荣心就得到极大满足。性能买了不用，但排面必须拉满。' },
+            'BBBAA': { type: '原厂教教徒', desc: '你不骑，你供着。排斥一切现代张扬的改装，一个人默默守着一台充满历史底蕴的老车。几乎不下场地也不混圈，偶尔推出来在铺装路上极慢地溜达一圈，连挡泥板上的泥点子都要立刻擦掉。原厂原漆连膜都没撕，对你来说这不是交通工具，这是移动的两轮博物馆。' },
+            'BBBAB': { type: '赛博朋克龟速漫游者', desc: '你是一个极度矛盾的存在。一个人，不混群，不玩特技，不拉极速，安分守己走在铺装路上。但是！你的车装满了赛博朋克的霓虹灯条、夸张外壳和极其张扬的战损风格。你不懂底蕴，只懂视觉冲击力。你就这样一个人骑着这台“未来战车”，在晚高峰车流里以20迈龟速挪动，像是一个迷路的外星人。' },
+            'BBBBB': { type: '摩托圈未解之谜', desc: '你创造了机车圈的未解之谜！选项极其分裂：既渴望炸裂张扬，又坚持独行、不搞特技、不拉极速。这就导致你一个人骑着装备了夸张大尾翼、光头胎、满身战损拉花的仿赛，在非机动车道上以25迈的速度匀速龟速前行。别人问为什么不飞个坡，你说怕摔；别人问为什么改这么夸张，你说为了好看。你是物理学和心理学上的双重奇迹。' }
+        };
+
+        // 智能匹配网图函数（根据5个维度的倾向分配不同风格的网图）
+        function getResultImage(str) {
+            const s = str[0] === 'A'; // 社交
+            const a = str[1] === 'A'; // 冒险
+            const t = str[2] === 'A'; // 特技
+            const p = str[3] === 'A'; // 速度
+            const ta= str[4] === 'A'; // 品位
+
+            // 个性龟速奇葩
+            if (str === 'BBBBB') return "https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=800&q=80";
+            // 品位/复古优先
+            if (ta) return "https://images.unsplash.com/photo-1609630875171-b1321377ee65?w=800&q=80";
+            // 冒险/越野优先
+            if (a) return "https://images.unsplash.com/photo-1558980394-da1f85d3b540?w=800&q=80";
+            // 赛道+特技
+            if (p && t) return "https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=800&q=80";
+            // 纯粹特技/街车
+            if (t) return "https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?w=800&q=80";
+            // 社交/车队
+            if (s) return "https://images.unsplash.com/photo-1622185135505-2d795003994a?w=800&q=80";
+            // 默认速度机器
+            return "https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=800&q=80";
+        }
+
+        // 核心逻辑控制
+        let currentQuestionIndex = 0;
+        let scores = { social: 0, adventure: 0, stunt: 0, speed: 0, taste: 0 };
+
+        function initScores() {
+            scores = { social: 0, adventure: 0, stunt: 0, speed: 0, taste: 0 };
+        }
+
+        function renderQuestion() {
+            document.getElementById('start-section').classList.add('hidden');
+            document.getElementById('result-section').classList.add('hidden');
+            document.getElementById('quiz-section').classList.remove('hidden');
+
+            const q = questions[currentQuestionIndex];
+            document.getElementById('question-count').innerText = `${currentQuestionIndex + 1} / ${questions.length}`;
+            document.getElementById('progress').style.width = `${((currentQuestionIndex) / questions.length) * 100}%`;
+            document.getElementById('question-title').innerText = q.title;
+
+            const optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = '';
+
+            q.options.forEach((opt) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.innerText = opt.text;
+                btn.onclick = () => selectOption(opt.value, q.dim);
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        function selectOption(value, dim) {
+            scores[dim] += value;
+            currentQuestionIndex++;
+            if (currentQuestionIndex < questions.length) {
+                renderQuestion();
+            } else {
+                showResult();
+            }
+        }
+
+        function showResult() {
+            document.getElementById('quiz-section').classList.add('hidden');
+            document.getElementById('result-section').classList.remove('hidden');
+            document.getElementById('progress').style.width = `100%`;
+
+            // 生成结果字符串
+            let str = '';
+            str += scores.social > 3 ? 'A' : 'B';
+            str += scores.adventure > 3 ? 'A' : 'B';
+            str += scores.stunt > 3 ? 'A' : 'B';
+            str += scores.speed > 3 ? 'A' : 'B';
+            str += scores.taste > 3 ? 'A' : 'B';
+
+            const resultData = resultMap[str] || { type: '未知组合', desc: '系统出错了，请联系管理员。' };
+            
+            document.getElementById('result-title').innerText = resultData.type;
+            document.getElementById('result-desc').innerText = resultData.desc;
+            document.getElementById('result-img').src = getResultImage(str);
+        }
+
+        function restart() {
+            currentQuestionIndex = 0;
+            initScores();
+            document.getElementById('start-section').classList.remove('hidden');
+            document.getElementById('result-section').classList.add('hidden');
+            document.getElementById('progress').style.width = `0%`;
+        }
+
+        document.getElementById('start-btn').addEventListener('click', () => {
+            initScores();
+            renderQuestion();
+        });
+
+        document.getElementById('restart-btn').addEventListener('click', restart);
+    </script>
+</body>
+</html>
